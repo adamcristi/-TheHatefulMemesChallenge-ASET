@@ -1,1 +1,1 @@
-# -TheHatefulMemesChallenge-ASET
+# TheHatefulMemesChallenge-ASET
