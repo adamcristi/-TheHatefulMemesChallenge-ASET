@@ -1,4 +1,4 @@
-# TheHatefulMemesChallenge-ASET
+# The Hateful Memes Challenge
 
 ## Team members
 
