@@ -1,6 +1,6 @@
 # The Hateful Memes Challenge
 
-## ASET Project - Computational Optimization**
+## ASET Project - Computational Optimization
 
 **Project Name**: *Hateful Memes*
 
