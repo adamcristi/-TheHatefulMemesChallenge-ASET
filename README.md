@@ -1,4 +1,4 @@
-# The Hateful Memes Challenge
+# The Hateful Memes Challenge ![alt text](https://drivendata-public-assets.s3.amazonaws.com/memes-overview.png)
 
 ## ASET Project - Computational Optimization
 
