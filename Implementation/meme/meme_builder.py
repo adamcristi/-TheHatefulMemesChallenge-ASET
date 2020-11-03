@@ -40,18 +40,22 @@ class MemeBuilder:
 
     def build(self):
 
-        # TODO: apply options for text and img
-
         text = self.meme.get_text()
         img = self.meme.get_image().get_img()
 
+        for opt in self.options:
+            opt.apply(text)
+
+        text.compute_text_sizes()
+
         x_pos, y_pos = text.get_pos()
         font, font_scale, font_thickness = text.get_font_data()
+        inside_color, outside_color = text.get_inside_color(), text.get_outside_color()
 
         for index, text_line in enumerate(text.wrapped_text):
             y_pos += text.text_height + text.space_between_lines
 
-            cv2.putText(img, text_line, (x_pos, y_pos), font, font_scale, (0, 0, 0), font_thickness + 3, cv2.LINE_AA)
-            cv2.putText(img, text_line, (x_pos, y_pos), font, font_scale, (255, 255, 255), font_thickness, cv2.LINE_AA)
+            cv2.putText(img, text_line, (x_pos, y_pos), font, font_scale, outside_color, font_thickness + 3, cv2.LINE_AA)
+            cv2.putText(img, text_line, (x_pos, y_pos), font, font_scale, inside_color, font_thickness, cv2.LINE_AA)
 
         return self.meme
