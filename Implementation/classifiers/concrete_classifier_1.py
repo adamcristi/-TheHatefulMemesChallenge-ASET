@@ -7,17 +7,17 @@ class ConcreteClassifier1(Classifier):
         super().__init__()
         self.best_accuracy = 0
 
-    def load_data(self):
+    def load_data(self, args):
         # TODO load the images and texts
         pass
 
-    def preprocess(self):
+    def preprocess(self, args):
         # TODO preprocess the images and texts
         pass
 
-    def train(self):
+    def train(self, args):
         # TODO create model and train data
         pass
 
-    def show_best_result(self) -> float:
+    def show_best_result(self, args) -> float:
         return self.best_accuracy
