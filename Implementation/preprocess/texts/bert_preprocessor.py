@@ -43,12 +43,14 @@ class BertPreprocessor(Preprocessor):
             )
 
             # add the encoded text
-            input_.append(encoded['input_ids'])
+            input_.append(torch.reshape(encoded['input_ids'], (1, -1)))
 
             # add the attention mask
-            attention_masks.append(encoded['attention_mask'])
+            attention_masks.append(torch.reshape(encoded['attention_mask'], (1, -1)))
 
         # convert lists to tensors
-        data["attention_masks"] = torch.cat(attention_masks, dim=0)
-        data["encoded_text"] = torch.cat(input_, dim=0)
-        data["label"] = torch.tensor(data["label"])
+        # data["attention_masks"] = torch.cat(attention_masks, dim=0)
+        # data["encoded_text"] = torch.cat(input_, dim=0)
+        # data["label"] = torch.tensor(data["label"])
+        data["attention_masks"] = attention_masks
+        data["encoded_text"] = input_
