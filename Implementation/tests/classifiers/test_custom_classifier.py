@@ -26,9 +26,9 @@ class CustomClassifierTest(unittest.TestCase):
     def test_load_data_when_having_valid_data(self):
         # INIT
         open_result = self.construct_open_result([
-            '{"id":"0", "label":"1", "text":"some text 1"}',
-            '{"id":"1", "label":"0", "text":"some text 2"}',
-            '{"id":"2", "label":"1", "text":"some text 3"}'
+            '{"id":"0", "label":"1", "text":"some text 1", "img":"some text 1"}',
+            '{"id":"1", "label":"0", "text":"some text 2", "img":"some text 2"}',
+            '{"id":"2", "label":"1", "text":"some text 3", "img":"some text 3"}'
         ])
 
         # when calling open return a bytes representation of a json files
@@ -36,7 +36,8 @@ class CustomClassifierTest(unittest.TestCase):
 
         expected_data = {"id": np.array([0, 1, 2]),
                          "label": np.array([1, 0, 1]),
-                         "text": np.array(["some text 1", "some text 2", "some text 3"])}
+                         "text": np.array(["some text 1", "some text 2", "some text 3"]),
+                         "img": np.array(["some text 1", "some text 2", "some text 3"])}
 
         obj = CustomClassifier()
 
@@ -50,6 +51,7 @@ class CustomClassifierTest(unittest.TestCase):
         self.assertTrue((actual_data["id"] == expected_data["id"]).all())
         self.assertTrue((actual_data["label"] == expected_data["label"]).all())
         self.assertTrue((actual_data["text"] == expected_data["text"]).all())
+        self.assertTrue((actual_data["img"] == expected_data["img"]).all())
 
     def test_load_data_when_having_invalid_data(self):
         # INIT
@@ -77,7 +79,8 @@ class CustomClassifierTest(unittest.TestCase):
         obj.data = {
             "id": [0, 1, 2],
             "label": [0, 1, 0],
-            "text": ["text1", "text2", "text3"]
+            "text": ["text1", "text2", "text3"],
+            "img": ["img1", "img2", "img3"]
         }
 
         tokenizer_mock = mockito.mock(BertTokenizer)
@@ -116,7 +119,8 @@ class CustomClassifierTest(unittest.TestCase):
             {
                 "id": [0, 1],
                 "label": [0, 1, 0],
-                "text": ["different", "lengths"]
+                "text": ["different", "lengths"],
+                "img": ["img1", "img2"]
             },
 
             {
