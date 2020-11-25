@@ -22,5 +22,6 @@ class Img2VecEncoding(Preprocessor):
 
             encoded = img2vec.get_vec(img, tensor=True)
             encoded = torch.flatten(encoded)
+            encoded = torch.reshape(encoded, (1, -1))
 
             data["img_encoded"] += [encoded]
