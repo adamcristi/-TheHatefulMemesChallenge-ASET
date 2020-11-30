@@ -167,6 +167,7 @@ class CustomClassifier(Classifier):
                     # if (batch_index + 1) % 10 == 0:
                     #     print(f"Epoch {epoch + 1}/{epochs}, Step {batch_index + 1}/{iterations}, inputs {inputs.shape}")
 
+                print(f"Epoch loss: {loss.item()}")
                 self.test_model()
 
         self.save_model()
