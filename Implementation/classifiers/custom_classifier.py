@@ -153,7 +153,6 @@ class CustomClassifier(Classifier):
         with torch.enable_grad():
             for epoch in tqdm(range(0, epochs)):
                 for batch_index, (inputs, labels) in enumerate(dataloader):
-
                     dev_inputs = inputs.to(DEVICE)
                     dev_labels = labels.to(DEVICE)
 
@@ -173,7 +172,8 @@ class CustomClassifier(Classifier):
                 print(f"Epoch loss: {loss.item()}")
                 self.test_model()
 
-        self.save_model()
+        if self.SAVE_PATH != "":
+            self.save_model()
 
     def compute_accuracy(self, outputs, labels):
 
@@ -204,7 +204,6 @@ class CustomClassifier(Classifier):
         # Don't update the gradients
         with torch.no_grad():
             for batch_index, (inputs, labels) in enumerate(dataloader):
-
                 dev_inputs = inputs.to(DEVICE)
                 dev_labels = labels.to(DEVICE)
 
