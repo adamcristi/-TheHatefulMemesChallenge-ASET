@@ -107,7 +107,10 @@ class CustomClassifier(Classifier):
         self.data["id"] = torch.tensor(self.data["id"])
         self.data["label"] = torch.tensor(self.data["label"])
 
-    def preprocess(self, args=(BertPreprocessor('bert-base-uncased', True), Img2VecEncoding())):
+    def preprocess(self, args):
+
+        # args example : (BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True),
+        #                        Img2VecEncoding(precalculated=True, enc_path=ENCODED_IMG_PATH))
 
         if type(self.data) is not dict or \
                 not all(key in self.data for key in ["id", "label", "text"]) or \
