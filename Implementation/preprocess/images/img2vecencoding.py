@@ -5,6 +5,8 @@ from Implementation.preprocess.preprocessor import Preprocessor
 from img2vec_pytorch import Img2Vec
 from PIL import Image
 
+IMAGE_COMPLETE_PATH = "../data/data/"
+
 
 class Img2VecEncoding(Preprocessor):
 
@@ -22,12 +24,15 @@ class Img2VecEncoding(Preprocessor):
                 data["img_encoded"] = pickle.load(file)
 
         else:
-            img2vec = Img2Vec(cuda=True)
+            if torch.cuda.is_available():
+                img2vec = Img2Vec(cuda=True)
+            else:
+                img2vec = Img2Vec()
 
             data["img_encoded"] = []
 
             for img_path in data["img"]:
-                img = Image.open(img_path).convert('RGB')
+                img = Image.open(IMAGE_COMPLETE_PATH + img_path).convert('RGB')
 
                 encoded = img2vec.get_vec(img, tensor=True)
                 encoded = torch.flatten(encoded)
@@ -35,5 +40,6 @@ class Img2VecEncoding(Preprocessor):
 
                 data["img_encoded"] += [encoded]
 
-            with open(self.enc_path, "wb") as file:
-                pickle.dump(data["img_encoded"], file)
+            if self.enc_path != "":
+                with open(self.enc_path, "wb") as file:
+                    pickle.dump(data["img_encoded"], file)
