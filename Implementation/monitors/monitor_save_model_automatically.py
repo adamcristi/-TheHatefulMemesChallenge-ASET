@@ -23,7 +23,7 @@ def spec_save_automatically(event):
 
         if train_model_done and test_model_done_after_train and not save_model_done:
             now = datetime.now()
-            current_date_and_time = now.strftime("%Y-%m-%d_%H:%M:%S")
+            current_date_and_time = now.strftime("%Y_%m_%d_%H_%M_%S")
             classifier.SAVE_PATH = "../automatically_saved_models/model_from_{}.pth".format(current_date_and_time)
             classifier.save_model()
 
