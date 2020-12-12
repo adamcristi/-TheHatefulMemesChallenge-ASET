@@ -9,7 +9,7 @@ from transformers import BertModel
 from Implementation.classifiers.classifier import *
 from Implementation.logging.logger import Logger
 from Implementation.preprocess.images.img2vecencoding import Img2VecEncoding
-from Implementation.preprocess.texts.bert_preprocessor import BertPreprocessor
+from Implementation.preprocess.texts.bert_preprocessor_torch import BertPreprocessor
 
 import numpy as np
 import json
