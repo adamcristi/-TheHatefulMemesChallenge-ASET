@@ -2,30 +2,31 @@ import json
 import os
 import time
 import cv2
-import keras
 
-from keras.layers import Dense
-from keras.layers import Activation, Input, GlobalMaxPooling2D, Conv2D, MaxPooling2D, GlobalAveragePooling2D, Flatten, \
-    Add
-from keras.layers import BatchNormalization
-from keras.layers import Dropout
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Activation, Input, GlobalMaxPooling2D, Conv2D, MaxPooling2D, \
+    GlobalAveragePooling2D, Flatten, Add, Lambda, Concatenate, Reshape
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Dropout
 
-from keras.models import load_model
-from keras.models import save_model
-from keras.models import Model
+from tensorflow.keras.models import load_model
+from tensorflow.keras.models import save_model
+from tensorflow.keras.models import Model
 
-from keras.losses import BinaryCrossentropy
+from tensorflow.keras.regularizers import l2
 
-from keras.optimizers import Adam
+from tensorflow.keras.losses import BinaryCrossentropy
+
+from tensorflow.keras.optimizers import Adam
+
+from tensorflow.keras.applications import ResNet50, resnet50
 
 import numpy as np
 
-# from keras_bert import load_trained_model_from_checkpoint
-# from transformers import TFBertModel
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tqdm import tqdm
 
-from PIL import Image
+import tensorflow as tf
 
 from Implementation.classifiers.classifier import Classifier
 from Implementation.logging.logger import Logger
@@ -37,6 +38,8 @@ class KerasCustomClassifier(Classifier):
         super().__init__()
 
         self.is_built = False
+
+        self.image_res = (256, 256, 3)
 
         self.IMAGE_COMPLETE_PATH = "./data/data/"
         self.SAVE_PATH = ""
@@ -51,6 +54,7 @@ class KerasCustomClassifier(Classifier):
 
         self.batch_size = 1
         self.learning_rate = 0.1
+        self.regularizer_val = 0.00001
 
     def load_data(self, args):
         # dataset_usecase can be train, valid or test
@@ -76,107 +80,88 @@ class KerasCustomClassifier(Classifier):
         self.data[data_usecase]["label"] = np.array([self.data[data_usecase]["label"]]).transpose()
         # self.data[data_usecase]["label"] = np.array([np.asarray(self.data[data_usecase]["label"]).tolist()])
 
-    def preprocess(self, text_preprocessor):
+    def preprocess(self, text_preprocessor, load_images=False):
 
         # args example : (BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True,
         #                                                                               load_bert=False))
-
-        # for key, value in self.data.items():
-        #
-        #     if type(value) is not dict or \
-        #             not all(key in value for key in ["id", "label", "text"]) or \
-        #             not all(len(value["id"]) == len_other
-        #                     for len_other in [len(value["label"]), len(value["text"])]):
-        #         raise Exception("Cannot preprocess \'" + key + "\' data with that format!")
 
         for key, value in self.data.items():
             value["type"] = key
 
             text_preprocessor.execute(value)
 
-            value["image_data"] = np.array([
-                cv2.resize(cv2.cvtColor(cv2.imread(filename=self.IMAGE_COMPLETE_PATH + img_path), cv2.COLOR_BGR2RGB),
-                           (32, 32)).astype('float32')
-                for img_path in tqdm(value["img"])])
+            if load_images:
+                value["image_data"] = np.load("./image_data/" + key + ".npy")
+
+            else:
+                value["image_data"] = np.array([cv2.resize(cv2.imread(filename=self.IMAGE_COMPLETE_PATH + img_path),
+                                                           self.image_res[0:2]).astype('float32')
+                                                for img_path in tqdm(value["img"])])
+
+                np.save("./image_data/" + key + ".npy", value["image_data"])
+
+            value["image_data"] = resnet50.preprocess_input(value["image_data"])
 
             value["model_input"] = [value["bert_output"][:value["image_data"].shape[0]], value["image_data"]]
+            # value["model_input"] = value["bert_output"]
+            # value["model_input"] = value["image_data"]
 
-            # print(value["bert_output"].tolist())
-            # print(type(value["model_input"][0][1][0]))
-            # print(len(value["model_input"][0][0]))
-            # print(len(value["model_input"][0][1]))
-            # print(len(value["model_input"][0][2]))
-            # print(type(value["model_input"][1][0][0][0][0]))
+    def __build_image_component(self):
 
-            # print(value["model_input"][0])
-            # print(value["model_input"][0, 0].shape)
-            # print(value["model_input"][1, 0].shape)
+        input_ = Input(shape=self.image_res)
 
-    @staticmethod
-    def __build_image_component():
+        # x = Lambda(lambda image: tf.image.resize(image, self.image_res[0:2]))(input_)
 
-        input_ = Input(shape=(32, 32, 3))
-        # this is for variable input (it should work, but for speed I opted for destructive resize in opencv)
-        # input_ = Input(shape=(None, None, 3))
+        resnet_model = ResNet50(include_top=False, weights="imagenet", pooling="max")
+        for layer in resnet_model.layers:
+            layer.trainable = False
 
-        x = Conv2D(32, (3, 3), activation="relu")(input_)
-        x = BatchNormalization()(x)
+        x = resnet_model(input_)
 
-        x = Conv2D(32, (3, 3), activation="relu")(x)
-        x = BatchNormalization()(x)
-
-        x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
-        x = Dropout(0.25)(x)
-
-        x = Conv2D(64, (3, 3), activation="relu")(x)
-        x = BatchNormalization()(x)
-
-        x = Conv2D(64, (3, 3), activation="relu")(x)
-        x = BatchNormalization()(x)
-
-        x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
-        x = Dropout(0.5)(x)
-
-        x = GlobalAveragePooling2D()(x)
         x = Flatten()(x)
 
-        output_ = Dense(768, activation='relu')(x)
+        output_ = Reshape((1, 768))(Dense(768, activation='relu', kernel_initializer="glorot_normal"
+                                          , kernel_regularizer=l2(self.regularizer_val))(x))
+
+        # output_ = Dense(768, activation='relu', kernel_initializer="glorot_normal"
+        #                 , kernel_regularizer=l2(self.regularizer_val))(x)
 
         return input_, output_
 
     def build(self, *args):
 
-        # model = load_trained_model_from_checkpoint(
-        #     config_file=self.config_path,
-        #     checkpoint_file=self.checkpoint_path,
-        #     training=False,
-        #     trainable=False,
-        #     seq_len=self.SEQ_LEN
-        # )
-        #
-        # text_inputs = model.inputs[:2]
-        #
-        # text_ouputs = model.layers[-3].output
-
         image_input, image_output = self.__build_image_component()
 
         text_input = Input(shape=(1, 768), dtype="float32")
 
+        # x = Dense(units=768, kernel_initializer="glorot_normal")(text_input)
+        # x = Activation("relu")(x)
+        # x = Dropout(0.2)(x)
+
         x = Add()([text_input, image_output])
         x = BatchNormalization()(x)
 
-        x = Dense(units=256, kernel_initializer="glorot_normal")(x)
-        x = Activation("relu")(x)
-        x = Dropout(0.25)(x)
+        # x = Concatenate()([text_input, image_output])
+        #
+        # x = image_output
 
-        x = Dense(units=128, kernel_initializer="glorot_normal")(x)
+        x = Dense(units=512, kernel_initializer="glorot_normal", kernel_regularizer=l2(self.regularizer_val))(x)
         x = Activation("relu")(x)
-        x = Dropout(0.5)(x)
+        # x = Dropout(0.3)(x)
+
+        x = Dense(units=256, kernel_initializer="glorot_normal", kernel_regularizer=l2(self.regularizer_val))(x)
+        x = Activation("relu")(x)
+        # x = Dropout(0.3)(x)
+
+        x = Dense(units=128, kernel_initializer="glorot_normal", kernel_regularizer=l2(self.regularizer_val))(x)
+        x = Activation("relu")(x)
+        # x = Dropout(0.5)(x)
 
         last_layer = Dense(units=2, activation="relu")(x)
 
         self.model = Model([text_input, image_input], last_layer)
-        # self.model = Model(image_input, image_output)
+        # self.model = Model(text_input, last_layer)
+        # self.model = Model(image_input, last_layer)
 
         print(self.model.summary())
 
@@ -197,10 +182,6 @@ class KerasCustomClassifier(Classifier):
                               save_best_only=True,
                               monitor="val_accuracy",
                               mode="max")
-
-        print(self.data["train"]["model_input"][0].shape)
-        print(self.data["train"]["model_input"][1].shape)
-        print(self.data["train"]["label"].shape)
 
         self.model.fit(x=self.data["train"]["model_input"],
                        y=self.data["train"]["label"],

@@ -1,6 +1,6 @@
 import tensorflow
 from tqdm import tqdm
-from transformers import BertTokenizer, TFBertModel, BertTokenizerFast
+from transformers import BertTokenizer, TFBertModel
 
 from Implementation.preprocess.preprocessor import Preprocessor
 
@@ -20,7 +20,7 @@ class BertPreprocessor(Preprocessor):
         self.bert_model = TFBertModel.from_pretrained(self.pretrained_model_type)
 
         # get tokenizer
-        self.tokenizer = BertTokenizerFast.from_pretrained(self.pretrained_model_type, do_lower_case=self.do_lower_case)
+        self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_model_type, do_lower_case=self.do_lower_case)
 
     def execute(self, data):
 

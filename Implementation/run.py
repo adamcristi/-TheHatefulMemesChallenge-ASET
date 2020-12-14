@@ -57,7 +57,10 @@ model.load_data((VALID_PATH, "valid"))
 
 # load_bert - if True, loads the precalculated (and saved) bert outputs
 #           - if False, recalculates and saves (LONG TIME ~ 1 hour)
-model.preprocess(BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True, load_bert=True))
+# load_images - loads images from a file with a easy loadable format
+#               (if set to false it will load them from raw images and then save - takes more time)
+model.preprocess(BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True, load_bert=True),
+                 load_images=True)
 
 # model.build()
-model.train(64, 20, 0.001, "./saved_models/" + str(time.time()) + "_" + datetime.now().strftime("%m_%d_%Y_%H_%M_%S"))
+model.train(128, 20, 0.001, "./saved_models/" + str(time.time()) + "_" + datetime.now().strftime("%m_%d_%Y_%H_%M_%S"))
