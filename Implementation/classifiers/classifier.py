@@ -11,7 +11,7 @@ class Classifier:
         pass
 
     @abc.abstractmethod
-    def preprocess(self, args):
+    def preprocess(self, *args):
         pass
 
     @abc.abstractmethod
