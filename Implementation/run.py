@@ -9,12 +9,18 @@
 # # (that "train.jsonl") and then add the .txt file to .gitignore
 import time
 from datetime import datetime
+import platform
 
 with open("meme_text_path.txt", "r") as path_file:
     # .rstrip() -> without new lines at the end
-    TRAIN_PATH = path_file.readline().rstrip()
-    VALID_PATH = path_file.readline().rstrip()
-    TEST_PATH = path_file.readline().rstrip()
+    if str(platform.system()) == "Windows":
+        TRAIN_PATH = path_file.readline().rstrip()
+        VALID_PATH = path_file.readline().rstrip()
+        TEST_PATH = path_file.readline().rstrip()
+    elif str(platform.system()) == "Linux" or str(platform.system()) == "Darwin":
+        TRAIN_PATH = path_file.readline().rstrip().replace("\\", "/")
+        VALID_PATH = path_file.readline().rstrip().replace("\\", "/")
+        TEST_PATH = path_file.readline().rstrip().replace("\\", "/")
 #
 #
 # # You also need to have the images in the path ".../Implementation/img/"
@@ -49,6 +55,7 @@ with open("meme_text_path.txt", "r") as path_file:
 
 from Implementation.classifiers.keras_classifier import KerasCustomClassifier
 from Implementation.preprocess.texts.bert_preprocessor_keras import BertPreprocessor
+from Implementation.preprocess.images.images_preprocessor import ImagePreprocessor
 
 model = KerasCustomClassifier(log_path=r".\logging\results")
 
@@ -61,6 +68,9 @@ model.load_data((VALID_PATH, "valid"))
 #               (if set to false it will load them from raw images and then save - takes more time)
 model.preprocess(BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True, load_bert=True),
                  load_images=True)
+
+#model.preprocess(BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True, load_bert=True),
+#                 ImagePreprocessor(resize_images_wanted=True, dimensions_resized_images=(256, 256)))
 
 # model.build()
 model.train(128, 20, 0.001, "./saved_models/" + str(time.time()) + "_" + datetime.now().strftime("%m_%d_%Y_%H_%M_%S"))

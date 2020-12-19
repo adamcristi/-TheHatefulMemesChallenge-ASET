@@ -80,7 +80,7 @@ class KerasCustomClassifier(Classifier):
         self.data[data_usecase]["label"] = np.array([self.data[data_usecase]["label"]]).transpose()
         # self.data[data_usecase]["label"] = np.array([np.asarray(self.data[data_usecase]["label"]).tolist()])
 
-    def preprocess(self, text_preprocessor, load_images=False):
+    def preprocess(self, text_preprocessor, load_images=False): # image_preprocessor):
 
         # args example : (BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True,
         #                                                                               load_bert=False))
@@ -89,6 +89,8 @@ class KerasCustomClassifier(Classifier):
             value["type"] = key
 
             text_preprocessor.execute(value)
+
+            #image_preprocessor.execute(data=value, data_key=key)
 
             if load_images:
                 value["image_data"] = np.load("./image_data/" + key + ".npy")
