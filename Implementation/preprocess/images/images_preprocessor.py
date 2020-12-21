@@ -9,8 +9,8 @@ from tqdm import tqdm
 IMAGES_COMPLETE_PATH = "./data/data/"
 SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH = "./image_data/"
 SAVED_PREPROCESSED_IMAGES_EXTENSION = ".npy"
-PERCENTAGE_NON_BLACK_PIXELS = 0.2
-MINIMUM_CONTOUR_AREA = 145.0
+MINIMUM_CONTOUR_AREA = 35.0
+MINIMUM_WHITE_PIXELS_MASK_CONTOUR = 15
 
 
 class ImagePreprocessor(Preprocessor):
@@ -56,10 +56,6 @@ class ImagePreprocessor(Preprocessor):
         # convert image to grayscale
         grayscale_transformed_image = cv2.cvtColor(original_image, code=cv2.COLOR_BGR2GRAY)
 
-        # apply threshold
-        threshold_used, threshold_grayscale_image = cv2.threshold(grayscale_transformed_image, thresh=0.0, maxval=255.0,
-                                                                  type=cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
         # apply bilateral filter for smoothing the image
         blur_transformed_image = cv2.bilateralFilter(grayscale_transformed_image, d=5, sigmaColor=75, sigmaSpace=75)
 
@@ -83,48 +79,35 @@ class ImagePreprocessor(Preprocessor):
                                                                           mode=cv2.RETR_EXTERNAL,
                                                                           method=cv2.CHAIN_APPROX_NONE)
 
-        mask_closing_transformed_image = np.zeros(closing_transformed_image.shape, dtype=np.uint8)
-        mask_threshold_grayscale_image = np.zeros(threshold_grayscale_image.shape, dtype=np.uint8)
-        new_threshold_grayscale_image = np.zeros(threshold_grayscale_image.shape, dtype=np.uint8)
-        inverted_threshold_grayscale_image = cv2.bitwise_not(threshold_grayscale_image)
+        # get mask of text from image
+        mask_transformed_image = np.zeros(original_image.shape, dtype=np.uint8)
+        mask_white_pixels_text_image = np.zeros(original_image.shape, dtype=np.uint8)
+
+        white_pixels_original_image = np.logical_and(np.logical_and((original_image[:, :, 0] == 255),
+                                                                    (original_image[:, :, 1] == 255)),
+                                                     np.logical_and((original_image[:, :, 1] == 255),
+                                                                    (original_image[:, :, 2] == 255)))
 
         for index, contour in enumerate(contours_transformed_image):
-            x, y, width, height = cv2.boundingRect(contour)
-            mask_closing_transformed_image[y:y + height, x:x + width] = 0
+            area_current_contour = cv2.contourArea(contour)
+            if area_current_contour > MINIMUM_CONTOUR_AREA:
+                x, y, width, height = cv2.boundingRect(contour)
+                cv2.drawContours(mask_transformed_image, contours_transformed_image, index, (255, 255, 255), -1)
 
-            area_contour = cv2.contourArea(contour)
-            cv2.drawContours(mask_closing_transformed_image, contours_transformed_image, index, (255, 255, 255), -1)
-            percentage_non_black_pixels = float(
-                cv2.countNonZero(mask_closing_transformed_image[y:y + height, x:x + width])) / (width * height)
+                mask_current_contour = np.logical_and(white_pixels_original_image[y:y + height, x:x + width],
+                                                      (mask_transformed_image[y:y + height, x:x + width] == 255))
+                mask_current_contour = np.where(mask_current_contour == True, 255, 0)
 
-            if percentage_non_black_pixels > PERCENTAGE_NON_BLACK_PIXELS and area_contour > MINIMUM_CONTOUR_AREA:
-                cv2.drawContours(mask_threshold_grayscale_image, [contour], -1, [255, 255, 255], -1)
-
-                temporary_threshold_grayscale_image = cv2.bitwise_and(
-                    mask_threshold_grayscale_image[y:y + height, x:x + width],
-                    threshold_grayscale_image[y:y + height, x:x + width])
-                temporary_inverted_threshold_grayscale_image = cv2.bitwise_and(
-                    mask_threshold_grayscale_image[y:y + height, x:x + width],
-                    inverted_threshold_grayscale_image[y:y + height, x:x + width])
-
-                count_non_black_pixels_threshold_grayscale_image = cv2.countNonZero(temporary_threshold_grayscale_image)
-                count_non_black_pixels_inverted_threshold_grayscale_image = cv2.countNonZero(
-                    temporary_inverted_threshold_grayscale_image)
-
-                if count_non_black_pixels_threshold_grayscale_image > count_non_black_pixels_inverted_threshold_grayscale_image:
-                    new_threshold_grayscale_image[y:y + height, x:x + width] = np.copy(
-                        threshold_grayscale_image[y:y + height, x:x + width])
-                else:
-                    new_threshold_grayscale_image[y:y + height, x:x + width] = np.copy(
-                        inverted_threshold_grayscale_image[y:y + height, x:x + width])
+                if np.count_nonzero(mask_current_contour == 255) >= MINIMUM_WHITE_PIXELS_MASK_CONTOUR:
+                    mask_white_pixels_text_image[y:y + height, x:x + width] = np.copy(mask_current_contour)
 
         # calculate morphological dilation
-        kernel_dilatation = cv2.getStructuringElement(shape=cv2.MORPH_ELLIPSE, ksize=(15, 15))
-        dilatation_new_threshold_grayscale_image = cv2.morphologyEx(new_threshold_grayscale_image, op=cv2.MORPH_DILATE,
-                                                                    kernel=kernel_dilatation)
+        kernel_dilatation = cv2.getStructuringElement(shape=cv2.MORPH_ELLIPSE, ksize=(20, 20))
+        dilatation_mask_white_pixels_text_image = cv2.morphologyEx(mask_white_pixels_text_image, op=cv2.MORPH_DILATE,
+                                                                   kernel=kernel_dilatation)
 
         # inpaint original image
-        new_image_without_text = cv2.inpaint(original_image, inpaintMask=dilatation_new_threshold_grayscale_image,
+        new_image_without_text = cv2.inpaint(original_image, inpaintMask=dilatation_mask_white_pixels_text_image,
                                              inpaintRadius=15, flags=cv2.INPAINT_NS)
 
         return new_image_without_text
@@ -136,7 +119,8 @@ class ImagePreprocessor(Preprocessor):
             if self.specified_resize_dimensions is None:
                 filename += "_{}_{}".format(str(self.images_frequently_width), str(self.images_frequently_height))
             else:
-                filename += "_{}_{}".format(str(self.specified_resize_dimensions[0]), str(self.specified_resize_dimensions[1]))
+                filename += "_{}_{}".format(str(self.specified_resize_dimensions[0]),
+                                            str(self.specified_resize_dimensions[1]))
         if self.have_to_remove_text_from_images:
             filename += "_without_text"
 
@@ -146,8 +130,9 @@ class ImagePreprocessor(Preprocessor):
         # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype('float32')
 
         if self.load_images:
-            data["image_data"] = np.load(SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH + self.get_filename_of_preprocessed_images(data_key) +
-                                         SAVED_PREPROCESSED_IMAGES_EXTENSION)
+            data["image_data"] = np.load(
+                SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH + self.get_filename_of_preprocessed_images(data_key) +
+                SAVED_PREPROCESSED_IMAGES_EXTENSION)
 
         else:
             data["image_data"] = None
@@ -160,10 +145,12 @@ class ImagePreprocessor(Preprocessor):
 
                 if self.have_to_resize_images:
                     if self.specified_resize_dimensions is None:
-                        current_image = self.resize_image(original_image=current_image, new_width=self.images_frequently_width,
+                        current_image = self.resize_image(original_image=current_image,
+                                                          new_width=self.images_frequently_width,
                                                           new_height=self.images_frequently_height)
                     else:
-                        current_image = self.resize_image(original_image=current_image, new_width=self.specified_resize_dimensions[0],
+                        current_image = self.resize_image(original_image=current_image,
+                                                          new_width=self.specified_resize_dimensions[0],
                                                           new_height=self.specified_resize_dimensions[1])
 
                 if data["image_data"] is None:
@@ -172,6 +159,5 @@ class ImagePreprocessor(Preprocessor):
                     data["image_data"] = np.vstack((data["image_data"], [current_image])).astype('float32')
 
             if self.save_newly_computed_images:
-                np.save(SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH+ self.get_filename_of_preprocessed_images(data_key) +
+                np.save(SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH + self.get_filename_of_preprocessed_images(data_key) +
                         SAVED_PREPROCESSED_IMAGES_EXTENSION, data["image_data"])
-
