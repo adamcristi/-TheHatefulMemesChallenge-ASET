@@ -1,6 +1,8 @@
 import json
 import os
 import time
+from datetime import datetime
+
 import cv2
 
 from tensorflow.keras.layers import Dense
@@ -15,6 +17,8 @@ from tensorflow.keras.models import Model
 
 from tensorflow.keras.regularizers import l2
 
+from tensorflow.keras.initializers import he_normal
+
 from tensorflow.keras.losses import BinaryCrossentropy
 
 from tensorflow.keras.optimizers import Adam
@@ -23,7 +27,7 @@ from tensorflow.keras.applications import ResNet50, resnet50
 
 import numpy as np
 
-from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.callbacks import ModelCheckpoint, CSVLogger
 from tqdm import tqdm
 
 import tensorflow as tf
@@ -44,13 +48,16 @@ class KerasCustomClassifier(Classifier):
         self.IMAGE_COMPLETE_PATH = "./data/data/"
         self.SAVE_PATH = ""
 
-        self.logger = Logger(log_path=log_path)
+        self.LOG_PATH = log_path
+        # self.logger = Logger(log_path=log_path)
 
         self.best_accuracy = 0
         self.data = {"train": dict(), "valid": dict()}
         # self.data = {"train": dict(), "valid": dict(), "test": dict()}
 
         self.model = Model()
+
+        self.history = []
 
         self.batch_size = 1
         self.learning_rate = 0.1
@@ -80,7 +87,7 @@ class KerasCustomClassifier(Classifier):
         self.data[data_usecase]["label"] = np.array([self.data[data_usecase]["label"]]).transpose()
         # self.data[data_usecase]["label"] = np.array([np.asarray(self.data[data_usecase]["label"]).tolist()])
 
-    def preprocess(self, text_preprocessor, load_images=False): # image_preprocessor):
+    def preprocess(self, text_preprocessor, load_images=False):  # image_preprocessor):
 
         # args example : (BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True,
         #                                                                               load_bert=False))
@@ -90,7 +97,7 @@ class KerasCustomClassifier(Classifier):
 
             text_preprocessor.execute(value)
 
-            #image_preprocessor.execute(data=value, data_key=key)
+            # image_preprocessor.execute(data=value, data_key=key)
 
             if load_images:
                 value["image_data"] = np.load("./image_data/" + key + ".npy")
@@ -122,11 +129,15 @@ class KerasCustomClassifier(Classifier):
 
         x = Flatten()(x)
 
-        output_ = Reshape((1, 768))(Dense(768, activation='relu', kernel_initializer="glorot_normal"
-                                          , kernel_regularizer=l2(self.regularizer_val))(x))
+        # x = Dense(768, kernel_initializer=he_normal(),
+        #           kernel_regularizer=l2(self.regularizer_val))(x)
+        # x = Activation("elu")(x)
+        # x = BatchNormalization()(x)
+        # x = Dropout(0.2)(x)
 
-        # output_ = Dense(768, activation='relu', kernel_initializer="glorot_normal"
-        #                 , kernel_regularizer=l2(self.regularizer_val))(x)
+        # output_ = Reshape((1, 768))(x)
+        output_ = Reshape((1, 2048))(x)
+        # output_ = x
 
         return input_, output_
 
@@ -136,30 +147,33 @@ class KerasCustomClassifier(Classifier):
 
         text_input = Input(shape=(1, 768), dtype="float32")
 
-        # x = Dense(units=768, kernel_initializer="glorot_normal")(text_input)
-        # x = Activation("relu")(x)
+        # x = Dense(units=768, kernel_initializer=he_normal())(text_input)
+        # x = Activation("elu")(x)
         # x = Dropout(0.2)(x)
 
-        x = Add()([text_input, image_output])
-        x = BatchNormalization()(x)
+        # x = Add()([text_input, image_output])
+        # x = BatchNormalization()(x)
 
-        # x = Concatenate()([text_input, image_output])
-        #
+        x = Concatenate()([text_input, image_output])
+
         # x = image_output
 
-        x = Dense(units=512, kernel_initializer="glorot_normal", kernel_regularizer=l2(self.regularizer_val))(x)
-        x = Activation("relu")(x)
-        # x = Dropout(0.3)(x)
+        x = Dense(units=512, kernel_initializer=he_normal(), kernel_regularizer=l2(self.regularizer_val))(x)
+        x = Activation("elu")(x)
+        x = BatchNormalization()(x)
+        x = Dropout(0.3)(x)
 
-        x = Dense(units=256, kernel_initializer="glorot_normal", kernel_regularizer=l2(self.regularizer_val))(x)
-        x = Activation("relu")(x)
-        # x = Dropout(0.3)(x)
+        x = Dense(units=256, kernel_initializer=he_normal(), kernel_regularizer=l2(self.regularizer_val))(x)
+        x = Activation("elu")(x)
+        x = BatchNormalization()(x)
+        x = Dropout(0.4)(x)
 
-        x = Dense(units=128, kernel_initializer="glorot_normal", kernel_regularizer=l2(self.regularizer_val))(x)
-        x = Activation("relu")(x)
-        # x = Dropout(0.5)(x)
+        x = Dense(units=128, kernel_initializer=he_normal(), kernel_regularizer=l2(self.regularizer_val))(x)
+        x = Activation("elu")(x)
+        x = BatchNormalization()(x)
+        x = Dropout(0.5)(x)
 
-        last_layer = Dense(units=2, activation="relu")(x)
+        last_layer = Dense(units=2, activation="elu")(x)
 
         self.model = Model([text_input, image_input], last_layer)
         # self.model = Model(text_input, last_layer)
@@ -185,14 +199,18 @@ class KerasCustomClassifier(Classifier):
                               monitor="val_accuracy",
                               mode="max")
 
-        self.model.fit(x=self.data["train"]["model_input"],
-                       y=self.data["train"]["label"],
-                       validation_data=(self.data["valid"]["model_input"], self.data["valid"]["label"]),
-                       epochs=epochs,
-                       batch_size=self.batch_size,
-                       verbose=2,
-                       callbacks=[mcp],
-                       shuffle=True)
+        csv_logger = CSVLogger(
+            self.LOG_PATH + str(time.time()) + "_" + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") + ".csv",
+            append=True, separator=',')
+
+        self.history = self.model.fit(x=self.data["train"]["model_input"],
+                                      y=self.data["train"]["label"],
+                                      validation_data=(self.data["valid"]["model_input"], self.data["valid"]["label"]),
+                                      epochs=epochs,
+                                      batch_size=self.batch_size,
+                                      verbose=2,
+                                      callbacks=[mcp, csv_logger],
+                                      shuffle=True)
 
     def test_model(self, data_used="test"):
         return
@@ -202,9 +220,13 @@ class KerasCustomClassifier(Classifier):
 
     def load_model(self, load_path):
         self.model = load_model(load_path)
+        print(self.model.summary())
 
-    def predict(self):
-        return
+    def evaluate(self):
+        scores = self.model.evaluate(self.data["valid"]["model_input"], self.data["valid"]["label"])
+
+        print('Loss: %.3f' % scores[0])
+        print('Accuracy: %.3f' % scores[1])
 
     def show_best_result(self, args) -> float:
         return self.best_accuracy
