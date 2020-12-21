@@ -3,7 +3,6 @@ import mockito
 import builtins
 import io
 import numpy as np
-import torch
 from transformers import BertTokenizer
 from mockito import ANY
 

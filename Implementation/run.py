@@ -77,12 +77,18 @@ model.load_data((VALID_PATH, "valid"))
 #                  load_images=True)
 
 model.preprocess(BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True, load_bert=True),
-                ImagePreprocessor(resize_images_wanted=True, dimensions_resized_images=(256, 256)))
+                 ImagePreprocessor(resize_images_wanted=True, dimensions_resized_images=(256, 256)))
 
-# model.build()
-# model.train(32, 100, 0.0001, "./saved_models/" + str(time.time()) + "_" + datetime.now().strftime("%m_%d_%Y_%H_%M_%S"))
+epochs = 50
+batch_size = 16
+learning_rate = 0.001
 
+model.build()
+model.train(batch_size, epochs, learning_rate,
+            "./saved_models/" + str(time.time()) + "_" + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +
+            "ResNet50_epochs" + str(epochs) + "_batch" + str(batch_size) + "_lr" + str(learning_rate))
 
-model.load_model("./saved_models/1608467048.0221534_12_20_2020_14_24_08.h5")
-model.evaluate()
+# model.load_model("./saved_models/1608467048.0221534_12_20_2020_14_24_08.h5")
+# model.evaluate()
 
+# DEPRECATED ==================================================
