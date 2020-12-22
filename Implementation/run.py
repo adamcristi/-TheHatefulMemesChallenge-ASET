@@ -73,11 +73,26 @@ model.load_data((VALID_PATH, "valid"))
 #           - if False, recalculates and saves (LONG TIME ~ 1 hour)
 # load_images - loads images from a file with a easy loadable format
 #               (if set to false it will load them from raw images and then save - takes more time)
+# save_newly_computed_images - if set to True (default), saves the current preprocessed images in a new file
+#                            - if set to False, only preprocesses the images
+# resize_images_wanted - if set to True, the images are resized to a specified or most common dimension
+#                      - if set to False (default), the resize is not applied
+# remove_text_from_images_wanted - if set to True, the text is removed from the images
+#                                - if set to False (default), the removal is not applied
+# dimensions_resized_images - if set (width, height) and remove_text_from_images_wanted is True, the images are resized
+#                             to that dimensions
+#                           - if None and remove_text_from_images_wanted is True, the images are resized to the most
+#                             common dimensions
+#                           - if set (width, height) and remove_text_from_images_wanted is False, the resize is not
+#                             applied
+#                           - if None and remove_text_from_images_wanted is False, the resize is not applied
+
 # model.preprocess(BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True, load_bert=True),
 #                  load_images=True)
 
 model.preprocess(BertPreprocessor(pretrained_model_type='bert-base-uncased', do_lower_case=True, load_bert=True),
-                 ImagePreprocessor(resize_images_wanted=True, dimensions_resized_images=(256, 256)))
+                 ImagePreprocessor(resize_images_wanted=True, dimensions_resized_images=(256, 256),
+                                   remove_text_from_images_wanted=True))
 
 epochs = 50
 batch_size = 16

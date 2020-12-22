@@ -80,8 +80,8 @@ class ImagePreprocessor(Preprocessor):
                                                                           method=cv2.CHAIN_APPROX_NONE)
 
         # get mask of text from image
-        mask_transformed_image = np.zeros(original_image.shape, dtype=np.uint8)
-        mask_white_pixels_text_image = np.zeros(original_image.shape, dtype=np.uint8)
+        mask_transformed_image = np.zeros(closing_transformed_image.shape, dtype=np.uint8)
+        mask_white_pixels_text_image = np.zeros(closing_transformed_image.shape, dtype=np.uint8)
 
         white_pixels_original_image = np.logical_and(np.logical_and((original_image[:, :, 0] == 255),
                                                                     (original_image[:, :, 1] == 255)),
@@ -135,7 +135,7 @@ class ImagePreprocessor(Preprocessor):
                 SAVED_PREPROCESSED_IMAGES_EXTENSION)
 
         else:
-            data["image_data"] = None
+            data["image_data"] = []
 
             for image_path in tqdm(data["img"]):
                 current_image = cv2.imread(IMAGES_COMPLETE_PATH + image_path)
@@ -153,10 +153,9 @@ class ImagePreprocessor(Preprocessor):
                                                           new_width=self.specified_resize_dimensions[0],
                                                           new_height=self.specified_resize_dimensions[1])
 
-                if data["image_data"] is None:
-                    data["image_data"] = np.array([current_image]).astype('float32')
-                else:
-                    data["image_data"] = np.vstack((data["image_data"], [current_image])).astype('float32')
+                data["image_data"] += [current_image]
+
+            data["image_data"] = np.array([data["image_data"]], dtype="float32")
 
             if self.save_newly_computed_images:
                 np.save(SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH + self.get_filename_of_preprocessed_images(data_key) +
