@@ -47,7 +47,16 @@ class ImagePreprocessor(Preprocessor):
 
     @staticmethod
     def resize_image(original_image, new_width, new_height):
-        resized_image = cv2.resize(original_image, (int(new_width), int(new_height)))
+        current_width, current_height = original_image.shape[:2]
+        # same
+        if current_width == new_width and current_height == new_height:
+            resized_image = original_image
+        # shrink image
+        elif current_width > new_width and current_height > new_height:
+            resized_image = cv2.resize(original_image, (int(new_width), int(new_height)), interpolation=cv2.INTER_AREA)
+        # completely or partially enlarge image
+        else:
+            resized_image = cv2.resize(original_image, (int(new_width), int(new_height)), interpolation=cv2.INTER_LINEAR)
         return resized_image
 
     @staticmethod
