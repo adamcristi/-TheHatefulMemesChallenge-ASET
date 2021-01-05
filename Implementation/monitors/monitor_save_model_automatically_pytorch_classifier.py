@@ -1,8 +1,8 @@
 from Implementation.monitors.pythonrv_python3 import rv
-from Implementation.classifiers.custom_classifier import CustomClassifier
+from Implementation.classifiers.pytorch_classifier import PytorchCustomClassifier
 from datetime import datetime
 
-classifier = CustomClassifier()
+classifier = PytorchCustomClassifier(log_path="./logging/results/")
 
 
 @rv.monitor(train_model=classifier.train, test_model=classifier.test_model, save_model=classifier.save_model)
