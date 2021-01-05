@@ -200,7 +200,6 @@ class DatasetTest(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-
-# Comenzi rulare coverage pentu aceste unit teste
-    # -> coverage run -m unittest Implementation/tests/data/test_dataset.py
-    # -> coverage report sau coverage report -m (arata si numarul liniilor unde nu s-a facut coverage)
+# Comenzi rulare coverage pentru aceste unit teste
+# -> coverage run -m unittest Implementation/tests/data/test_dataset.py
+# -> coverage report sau coverage report -m (arata si numarul liniilor unde nu s-a facut coverage)

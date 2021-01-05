@@ -5,9 +5,11 @@ import numpy as np
 from Implementation.preprocess.preprocessor import Preprocessor
 from collections import Counter
 from tqdm import tqdm
+from pathlib import Path
 
-IMAGES_COMPLETE_PATH = "./data/data/"
-SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH = "./image_data/"
+ROOT_FILENAME = "Implementation"
+IMAGES_COMPLETE_PATH_FROM_ROOT = ['data', 'data']
+SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH = 'image_data'
 SAVED_PREPROCESSED_IMAGES_EXTENSION = ".npy"
 MINIMUM_CONTOUR_AREA = 35.0
 MINIMUM_WHITE_PIXELS_MASK_CONTOUR = 15
@@ -18,6 +20,10 @@ class ImagePreprocessor(Preprocessor):
     def __init__(self, load_images=False, save_newly_computed_images=True,
                  resize_images_wanted=False, remove_text_from_images_wanted=False, dimensions_resized_images=None):
         super().__init__()
+
+        self.root_directory = Path(__file__)
+        while str(self.root_directory.name) != ROOT_FILENAME:
+            self.root_directory = self.root_directory.parent
 
         self.load_images = load_images
         self.save_newly_computed_images = save_newly_computed_images
@@ -35,7 +41,7 @@ class ImagePreprocessor(Preprocessor):
         all_images_height = []
         all_images_width = []
 
-        for root, dirs, files in os.walk(IMAGES_COMPLETE_PATH + "img"):
+        for root, dirs, files in os.walk(os.path.join(self.root_directory, *IMAGES_COMPLETE_PATH_FROM_ROOT, "img")):
             for file in tqdm(files):
                 path_image = os.path.join(root, file)
                 image = cv2.imread(path_image)
@@ -56,7 +62,8 @@ class ImagePreprocessor(Preprocessor):
             resized_image = cv2.resize(original_image, (int(new_width), int(new_height)), interpolation=cv2.INTER_AREA)
         # completely or partially enlarge image
         else:
-            resized_image = cv2.resize(original_image, (int(new_width), int(new_height)), interpolation=cv2.INTER_LINEAR)
+            resized_image = cv2.resize(original_image, (int(new_width), int(new_height)),
+                                       interpolation=cv2.INTER_LINEAR)
         return resized_image
 
     @staticmethod
@@ -140,14 +147,15 @@ class ImagePreprocessor(Preprocessor):
 
         if self.load_images:
             data["image_data"] = np.load(
-                SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH + self.get_filename_of_preprocessed_images(data_key) +
-                SAVED_PREPROCESSED_IMAGES_EXTENSION)
+                os.path.join(self.root_directory, SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH,
+                             self.get_filename_of_preprocessed_images(data_key) + SAVED_PREPROCESSED_IMAGES_EXTENSION))
 
         else:
             data["image_data"] = []
 
             for image_path in tqdm(data["img"]):
-                current_image = cv2.imread(IMAGES_COMPLETE_PATH + image_path)
+                current_image = cv2.imread(
+                    os.path.join(self.root_directory, *IMAGES_COMPLETE_PATH_FROM_ROOT, image_path))
 
                 if self.have_to_remove_text_from_images:
                     current_image = self.remove_text_from_image(original_image=current_image)
@@ -167,5 +175,7 @@ class ImagePreprocessor(Preprocessor):
             data["image_data"] = np.array([data["image_data"]], dtype="float32")
 
             if self.save_newly_computed_images:
-                np.save(SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH + self.get_filename_of_preprocessed_images(data_key) +
-                        SAVED_PREPROCESSED_IMAGES_EXTENSION, data["image_data"])
+                np.save(os.path.join(self.root_directory, SAVED_PREPROCESSED_IMAGES_COMPLETE_PATH,
+                                     self.get_filename_of_preprocessed_images(
+                                         data_key) + SAVED_PREPROCESSED_IMAGES_EXTENSION),
+                        data["image_data"])

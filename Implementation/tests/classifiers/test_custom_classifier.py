@@ -6,7 +6,7 @@ import numpy as np
 from transformers import BertTokenizer
 from mockito import ANY
 
-from Implementation.classifiers.custom_classifier import CustomClassifier
+from Implementation.classifiers.pytorch_classifier import CustomClassifier
 
 
 class CustomClassifierTest(unittest.TestCase):
