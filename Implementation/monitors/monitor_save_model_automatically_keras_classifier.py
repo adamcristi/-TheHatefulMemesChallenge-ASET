@@ -9,12 +9,14 @@ ROOT_FILENAME = "Implementation"
 ROOT_DIRECTORY = Path(__file__)
 while str(ROOT_DIRECTORY.name) != ROOT_FILENAME:
     ROOT_DIRECTORY = ROOT_DIRECTORY.parent
-    
-classifier_keras = KerasCustomClassifier(log_path=os.path.join(ROOT_DIRECTORY, 'logging', 'results'),  build_function=build_1,
+
+classifier_keras = KerasCustomClassifier(log_path=os.path.join(ROOT_DIRECTORY, 'logging', 'results'),
+                                         build_function=build_1,
                                          batch_size=16, learning_rate=0.001, regularizer_val=0.00001)
 
 
-@rv.monitor(train_model=classifier_keras.train, test_model=classifier_keras.evaluate, save_model=classifier_keras.save_model)
+@rv.monitor(train_model=classifier_keras.train, test_model=classifier_keras.evaluate,
+            save_model=classifier_keras.save_model)
 @rv.spec(when=rv.POST, history_size=5)
 def spec_save_automatically(event):
     if event.fn.test_model.called:
@@ -35,6 +37,6 @@ def spec_save_automatically(event):
             current_date_and_time = now.strftime("%Y_%m_%d_%H_%M_%S")
 
             classifier_keras.save_model(path=os.path.join(ROOT_DIRECTORY, 'automatically_saved_models',
-                                                          'model_from_{}'.format(current_date_and_time)), ext=".pth")
+                                                          'model_from_{}'.format(current_date_and_time)), ext=".h5")
 
             print("Model saved automatically!")

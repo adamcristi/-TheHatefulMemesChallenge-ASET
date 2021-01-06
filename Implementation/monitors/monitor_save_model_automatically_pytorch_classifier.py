@@ -9,7 +9,7 @@ ROOT_DIRECTORY = Path(__file__)
 while str(ROOT_DIRECTORY.name) != ROOT_FILENAME:
     ROOT_DIRECTORY = ROOT_DIRECTORY.parent
 
-classifier_pytorch = PytorchCustomClassifier(log_path="./logging/results/")
+classifier_pytorch = PytorchCustomClassifier(log_path=os.path.join(ROOT_DIRECTORY, 'logging'))
 
 
 @rv.monitor(train_model=classifier_pytorch.train, test_model=classifier_pytorch.test_model, save_model=classifier_pytorch.save_model)

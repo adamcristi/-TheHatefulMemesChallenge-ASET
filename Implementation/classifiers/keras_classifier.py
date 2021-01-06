@@ -29,7 +29,6 @@ import numpy as np
 
 from tensorflow.python.keras.callbacks import ModelCheckpoint, CSVLogger
 
-
 from Implementation.classifiers.classifier import Classifier
 
 
@@ -110,7 +109,8 @@ class KerasCustomClassifier(Classifier):
 
             # value["image_data"] = resnet50.preprocess_input(value["image_data"])
 
-            value["model_input"] = [value["bert_output"][:value["image_data"].shape[0]], value["image_data"]]
+            # value["model_input"] = [value["bert_output"][:value["image_data"].shape[0]], value["image_data"]]
+            value["model_input"] = [value["bert_output"][:value["image_data"][0].shape[0]], value["image_data"][0]]
             # value["model_input"] = value["bert_output"]
             # value["model_input"] = value["image_data"]
 
