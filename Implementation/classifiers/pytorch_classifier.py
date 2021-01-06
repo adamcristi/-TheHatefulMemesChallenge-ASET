@@ -84,7 +84,7 @@ class HatefulMemesDataset(Dataset):
         return len(self.data["encoded_text"])
 
 
-class CustomClassifier(Classifier):
+class PytorchCustomClassifier(Classifier):
 
     def __init__(self, log_path):
         super().__init__()

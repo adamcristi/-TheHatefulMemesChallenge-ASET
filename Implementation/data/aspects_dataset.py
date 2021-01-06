@@ -16,6 +16,7 @@ def mock_print_log_to_console(*args, **kwargs):
 @aspectlib.Aspect
 def transform_data_from_dataframe_to_dict_for_texts(*args, **kwargs):
     stack = inspect.stack()
+    called_function_class = None
     for index in range(len(list(stack[2][0].f_locals)) - 1, -1, -1):
         if "<class '" in str(stack[2][0].f_locals.get(list(stack[2][0].f_locals)[index])):
             called_function_class = str(stack[2][0].f_locals.get(list(stack[2][0].f_locals)[index]))
@@ -44,6 +45,7 @@ def transform_data_from_dataframe_to_dict_for_texts(*args, **kwargs):
 @aspectlib.Aspect
 def transform_data_from_dataframe_to_list_for_images(*args, **kwargs):
     stack = inspect.stack()
+    called_function_class = None
     for index in range(len(list(stack[2][0].f_locals)) - 1, -1, -1):
         if "<class '" in str(stack[2][0].f_locals.get(list(stack[2][0].f_locals)[index])):
             called_function_class = str(stack[2][0].f_locals.get(list(stack[2][0].f_locals)[index]))

@@ -5,12 +5,20 @@ from transformers import BertTokenizer, TFBertModel
 from Implementation.preprocess.preprocessor import Preprocessor
 
 import numpy as np
+import os
+from pathlib import Path
+
+ROOT_FILENAME = "Implementation"
 
 
 class BertPreprocessor(Preprocessor):
 
     def __init__(self, pretrained_model_type, do_lower_case, load_bert=False):
         super().__init__()
+
+        self.root_directory = Path(__file__)
+        while str(self.root_directory.name) != ROOT_FILENAME:
+            self.root_directory = self.root_directory.parent
 
         self.pretrained_model_type = pretrained_model_type
         self.do_lower_case = do_lower_case
@@ -25,7 +33,8 @@ class BertPreprocessor(Preprocessor):
     def execute(self, data):
 
         if self.load_bert:
-            data["bert_output"] = np.load("./bert_output/bert_output_" + data["type"] + ".npy")
+            data["bert_output"] = np.load(os.path.join(self.root_directory, 'bert_output',
+                                                       'bert_output_' + data["type"] + '.npy'))
 
             # print(data["bert_output"][0])
             # print(len(data["bert_output"]))
@@ -62,5 +71,6 @@ class BertPreprocessor(Preprocessor):
             bert_output = np.array([self.bert_model(input_id, token_type_ids=None, attention_mask=attention_mask)[1]
                                     for input_id, attention_mask in tqdm(zip(input_ids, attention_masks))])
 
-            np.save("./bert_output/bert_output_" + data["type"] + "_new.npy", bert_output)
+            np.save(os.path.join(self.root_directory, 'bert_output', 'bert_output_' + data["type"] + '_new.npy'),
+                                 bert_output)
             data["bert_output"] = bert_output
