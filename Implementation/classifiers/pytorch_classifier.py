@@ -43,12 +43,12 @@ class LocalNeuralNet(nn.Module):
     def forward(self, input_):
         output = self.linear_layer_1(input_)
         output = self.activation_1(output)
-        output = self.batchnorm_1(output)
+        #output = self.batchnorm_1(output)
         output = self.dropout_1(output)
 
         output = self.linear_layer_2(output)
         output = self.activation_2(output)
-        output = self.batchnorm_2(output)
+        #output = self.batchnorm_2(output)
         output = self.dropout_2(output)
 
         output = self.linear_last(output)
@@ -84,7 +84,7 @@ class HatefulMemesDataset(Dataset):
         return len(self.data["encoded_text"])
 
 
-class CustomClassifier(Classifier):
+class PytorchCustomClassifier(Classifier):
 
     def __init__(self, log_path):
         super().__init__()
@@ -221,8 +221,9 @@ class CustomClassifier(Classifier):
                                  "valid_loss": valid_loss,
                                  "valid_accuracy": valid_accuracy})
 
-                self.save_model(self.SAVE_PATH + str(time.time()) + "_epoch_" + str(epoch + 1) + "_" + str(epochs),
-                                ".pth")
+                if self.SAVE_PATH != "":
+                    self.save_model(self.SAVE_PATH + str(time.time()) + "_epoch_" + str(epoch + 1) + "_" + str(epochs),
+                                    ".pth")
 
         # if self.SAVE_PATH != "":
         #     self.save_model(self.SAVE_PATH + str(time.time()) + "_final", ".pth")

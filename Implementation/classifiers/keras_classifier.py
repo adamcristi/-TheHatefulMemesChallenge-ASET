@@ -110,7 +110,8 @@ class KerasCustomClassifier(Classifier):
 
             # value["image_data"] = resnet50.preprocess_input(value["image_data"])
 
-            value["model_input"] = [value["bert_output"][:value["image_data"].shape[0]], value["image_data"]]
+            # value["model_input"] = [value["bert_output"][:value["image_data"].shape[0]], value["image_data"]]
+            value["model_input"] = [value["bert_output"][:value["image_data"][0].shape[0]], value["image_data"][0]]
             # value["model_input"] = value["bert_output"]
             # value["model_input"] = value["image_data"]
 
@@ -120,7 +121,7 @@ class KerasCustomClassifier(Classifier):
 
         if not self.is_built:
             self.model = self.build(self.image_res, self.regularizer_val, self.learning_rate)
-
+        
         mcp = ModelCheckpoint(self.SAVE_PATH + ".h5",
                               save_best_only=True,
                               monitor="val_accuracy",
