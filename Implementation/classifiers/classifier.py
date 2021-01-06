@@ -7,15 +7,15 @@ class Classifier:
         pass
 
     @abc.abstractmethod
-    def load_data(self, args):
+    def load_data(self, args):  # load the images and texts
         pass
 
     @abc.abstractmethod
-    def preprocess(self, args):
+    def preprocess(self, *args):  # preprocess the images and texts
         pass
 
     @abc.abstractmethod
-    def train(self, args):
+    def train(self, args):  # create model and train data
         pass
 
     @abc.abstractmethod

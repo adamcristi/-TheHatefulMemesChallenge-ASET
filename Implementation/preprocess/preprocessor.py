@@ -7,7 +7,7 @@ class Preprocessor:
         pass
 
     @abc.abstractmethod
-    def execute(self, args):
+    def execute(self, *args):
         pass
 
 

@@ -1,0 +1,4 @@
+[run]
+omit =
+    /home/cristian_adam/.local/*
+    /usr/*
