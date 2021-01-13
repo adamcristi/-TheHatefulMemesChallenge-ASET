@@ -21,6 +21,7 @@
 - *Cristian Adam*:  adamcristi285@gmail.com
 
 **Useful Links**:
+- [Final Documentation / Technical Report](https://docs.google.com/document/d/1NHXk6tP93WVLBFmG9CQGKEXovb-RY8Qi7C2RMAAOjDI/edit?usp=sharing)
 - [Trello](https://trello.com/b/tzK3MpZi/hateful-memes-project-aset)
 - [State of the Art](https://docs.google.com/document/d/1d_sV0AzFG4gX81JC7QQDiZX_ngkBpMYhU94gb68mk3w/edit?usp=sharing)
 - [Requirements analysis](https://docs.google.com/document/d/1nyvlDPqzPub9RVSgMolrPc3CIX010YN89snejp5-qDM/edit?usp=sharing)
